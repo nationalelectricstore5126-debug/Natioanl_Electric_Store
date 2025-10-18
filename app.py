@@ -1,26 +1,37 @@
-
 from flask import Flask, request, jsonify, render_template, send_from_directory
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 import os
 from datetime import datetime
-
+import json
 
 # ---------------- LOAD ENV ----------------
 load_dotenv()
-# ---------------- GOOGLE SHEETS SETUP ----------------
-
 
 app = Flask(__name__)
 
 # ---------------- GOOGLE SHEETS SETUP ----------------
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 try:
-    creds_file = os.getenv("GOOGLE_SERVICE_ACCOUNT")
+    # For Render deployment - use environment variable with JSON content
+    service_account_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
     sheet_id = os.getenv("GOOGLE_SHEET_ID")
-
-    creds = ServiceAccountCredentials.from_json_keyfile_name(creds_file, scope)
+    
+    if service_account_json:
+        # Parse the JSON string directly for Render
+        print("🔧 Using JSON environment variable for Google Sheets authentication")
+        service_account_info = json.loads(service_account_json)
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
+    else:
+        # Fallback to file-based authentication for local development
+        print("🔧 Using file-based authentication for Google Sheets")
+        creds_file = os.getenv("GOOGLE_SERVICE_ACCOUNT")
+        if creds_file and os.path.exists(creds_file):
+            creds = ServiceAccountCredentials.from_json_keyfile_name(creds_file, scope)
+        else:
+            raise Exception("Google Sheets credentials not found")
+    
     client = gspread.authorize(creds)
     sheet = client.open_by_key(sheet_id)
 
@@ -64,6 +75,10 @@ def stock_page():
 def reports_page():
     return render_template("reports.html")
 
+@app.route("/settings")
+def settings_page():
+    return render_template("Settings.html")
+
 @app.route("/template/<path:filename>")
 def serve_module(filename):
     return send_from_directory("template", filename)
@@ -74,6 +89,9 @@ def serve_module(filename):
 def dashboard_stats():
     """Get dashboard statistics from Google Sheets - DIRECT FROM STOCK IN/OUT SHEETS"""
     try:
+        if products_ws is None or stockin_ws is None or stockout_ws is None:
+            return jsonify({"error": "Google Sheet not loaded"}), 500
+            
         # Get all data from sheets
         products_data = products_ws.get_all_values()
         stockin_data = stockin_ws.get_all_values()
@@ -177,7 +195,6 @@ def dashboard_stats():
 # ---------- PRODUCTS (FIXED - ONLY 3 COLUMNS) ----------
 @app.route("/api/products", methods=["GET", "POST", "DELETE"])
 def products():
-    global products_ws
     if products_ws is None:
         print("❌ Google Sheet not loaded!")
         return jsonify({"error": "Google Sheet not loaded"}), 500
@@ -463,7 +480,7 @@ def stock_out():
         return jsonify({"error": str(e)}), 500
 
 
-# ---------- REPORTS ----------
+# ---------- REPORTS (FIXED COLUMN MAPPING) ----------
 @app.route("/api/reports", methods=["GET"])
 def reports():
     if transactions_ws is None:
@@ -478,6 +495,8 @@ def reports():
         headers = [h.strip() for h in all_data[0]]
         rows = all_data[1:]
         
+        print(f"🔍 Transactions headers: {headers}")
+        
         formatted_transactions = []
         for row in rows:
             while len(row) < len(headers):
@@ -487,20 +506,42 @@ def reports():
             for i, header in enumerate(headers):
                 row_dict[header] = row[i] if i < len(row) else ''
             
-            # Map to consistent field names
+            # ✅ FIXED: Correct column mapping based on ACTUAL Google Sheets structure
+            # Debug: Print the actual row data to see the order
+            print(f"📋 Row data: {row}")
+            
+            # ✅ FIXED: Use POSITION-BASED mapping instead of header-based
+            # Based on the actual column order in your Google Sheet
+            # Transactions sheet columns: Type, Product ID, Quantity, Price, Date, Main Category, Sub Category
             transaction = {
-                "type": row_dict.get("Type", ""),
-                "productId": row_dict.get("Product ID", ""),
-                "quantity": row_dict.get("Quantity", ""),
-                "price": row_dict.get("Price", ""),
-                "date": row_dict.get("Date", ""),
-                "mainCat": row_dict.get("Main Category", ""),
-                "subCat": row_dict.get("Sub Category", "")
+                "type": row[0] if len(row) > 0 else "",           # Column 1: Type
+                "productId": row[1] if len(row) > 1 else "",      # Column 2: Product ID
+                "quantity": row[2] if len(row) > 2 else "",       # Column 3: Quantity
+                "price": row[3] if len(row) > 3 else "",          # Column 4: Price
+                "date": row[4] if len(row) > 4 else "",           # Column 5: Date
+                "mainCat": row[5] if len(row) > 5 else "",        # Column 6: Main Category
+                "subCat": row[6] if len(row) > 6 else ""          # Column 7: Sub Category
             }
+            
+            # Convert quantity and price to proper types
+            try:
+                transaction["quantity"] = int(float(transaction["quantity"])) if transaction["quantity"] else 0
+            except (ValueError, TypeError):
+                transaction["quantity"] = 0
+                
+            try:
+                transaction["price"] = float(transaction["price"]) if transaction["price"] else 0.0
+            except (ValueError, TypeError):
+                transaction["price"] = 0.0
             
             formatted_transactions.append(transaction)
         
-        print("📊 Reports fetched:", len(formatted_transactions), "transactions")
+        print(f"📊 Reports fetched: {len(formatted_transactions)} transactions")
+        
+        # ✅ DEBUG: Print first transaction to verify structure
+        if formatted_transactions:
+            print("🔍 First transaction sample:", formatted_transactions[0])
+        
         return jsonify(formatted_transactions)
     except Exception as e:
         print("❌ Error in /api/reports:", e)
@@ -512,6 +553,9 @@ def reports():
 def simple_reports():
     """Simple reports data for frontend - WITHOUT PRODUCT NAME"""
     try:
+        if transactions_ws is None or products_ws is None:
+            return jsonify({"error": "Google Sheet not loaded"}), 500
+            
         # Get all transactions
         all_transactions = transactions_ws.get_all_values()
         if len(all_transactions) < 2:
@@ -612,6 +656,9 @@ def simple_reports():
 def monthly_report():
     """Get monthly report data - WITHOUT PRODUCT NAME"""
     try:
+        if transactions_ws is None or products_ws is None:
+            return jsonify({"error": "Google Sheet not loaded"}), 500
+            
         month = request.args.get("month")
         
         print(f"🔍 Monthly report requested for: {month}")
@@ -719,6 +766,9 @@ def monthly_report():
 def daily_report():
     """Get daily report data - WITHOUT PRODUCT NAME"""
     try:
+        if transactions_ws is None or products_ws is None:
+            return jsonify({"error": "Google Sheet not loaded"}), 500
+            
         date = request.args.get("date")
         
         print(f"🔍 Daily report requested for: {date}")
@@ -825,6 +875,9 @@ def daily_report():
 def generate_report():
     """Generate and save report to Google Sheets - WITH CATEGORIES INSTEAD OF PRODUCT NAME"""
     try:
+        if reports_ws is None:
+            return jsonify({"error": "Google Sheet not loaded"}), 500
+            
         data = request.json
         report_type = data.get("type", "general")
         period = data.get("period", datetime.now().strftime("%Y-%m"))
@@ -873,16 +926,15 @@ def generate_report():
         print("❌ Error generating report:", e)
         return jsonify({"error": str(e)}), 500
 
-# ---------- SETTINGS PAGE ----------
-@app.route("/settings")
-def settings_page():
-    return render_template("Settings.html")
 
 # ---------- CATEGORIES API (NEW) ----------
 @app.route("/api/categories", methods=["GET", "POST", "DELETE"])
 def categories_api():
     """API for category management"""
     try:
+        if products_ws is None:
+            return jsonify({"error": "Google Sheet not loaded"}), 500
+            
         if request.method == "GET":
             # Get all products to extract categories
             all_products = products_ws.get_all_values()
@@ -1007,6 +1059,9 @@ def categories_api():
 def products_with_categories():
     """Get all products with their categories and current stock"""
     try:
+        if products_ws is None:
+            return jsonify({"error": "Google Sheet not loaded"}), 500
+            
         all_products = products_ws.get_all_values()
         
         if len(all_products) < 2:
@@ -1054,4 +1109,5 @@ def health_check():
 
 # ---------- RUN APP ----------
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)

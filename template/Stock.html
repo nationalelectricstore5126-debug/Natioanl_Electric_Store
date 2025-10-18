@@ -666,7 +666,7 @@
     });
   }
 
-  // Render transaction table
+  // ✅ FIXED: Render transaction table with correct column mapping
   function renderTransactionTable() {
     transactionTableBody.innerHTML = '';
     if(!transactions || transactions.length === 0) {
@@ -684,13 +684,23 @@
       const typeClass = t.type === 'in' ? 'stock-in' : 'stock-out';
       const typeIcon = t.type === 'in' ? '📥 IN' : '📤 OUT';
       
-      // Safely handle all possible field names
+      // ✅ FIXED: Correct column mapping
       const productId = t.productId || t['Product ID'] || 'Unknown';
       const mainCat = t.mainCat || t['Main Category'] || 'Unknown';
       const subCat = t.subCat || t['Sub Category'] || '-';
       const quantity = t.quantity || t.Quantity || 0;
       const price = t.price || t.Price || 0;
       const date = t.date || t.Date || new Date().toISOString();
+      
+      // ✅ DEBUG: Log transaction data to verify
+      console.log('📊 Transaction:', {
+        productId,
+        mainCat,
+        subCat,
+        quantity,
+        price,
+        date
+      });
       
       row.innerHTML = `
         <td class="${typeClass}"><strong>${typeIcon}</strong></td>

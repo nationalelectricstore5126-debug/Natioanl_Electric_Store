@@ -44,6 +44,8 @@
       border-right:1px solid rgba(255,255,255,0.02);
       min-height:100vh;
       transition:left 0.25s;
+      position: relative;
+      z-index: 100;
     }
     .brand{font-weight:700;margin-bottom:14px}
     .nav{display:flex;flex-direction:column;gap:8px}
@@ -87,6 +89,36 @@
       font-weight: bold;
     }
 
+    /* Mobile sidebar overlay */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 90;
+    }
+    
+    .sidebar-overlay.active {
+      display: block;
+    }
+    
+    /* Mobile sidebar close button */
+    .sidebar-close {
+      display: none;
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 101;
+    }
+
     /* RESPONSIVE RULES */
     @media (max-width:860px){
       .card{flex-direction:column;max-width:500px}
@@ -99,7 +131,7 @@
         left:-300px;
         top:0;
         height:100%;
-        z-index:40;
+        z-index:100;
         width:240px;
       }
       .sidebar.open{left:0}
@@ -113,6 +145,11 @@
         margin-right:8px;
       }
       header.app-header strong{font-size:16px}
+      
+      /* Show close button on mobile */
+      .sidebar-close {
+        display: block;
+      }
     }
 
     @media (max-width:480px){
@@ -154,7 +191,11 @@
   <!-- APP -->
   <div id="app" class="app">
     <div style="display:flex;min-height:100vh">
+      <!-- Sidebar Overlay for Mobile -->
+      <div id="sidebarOverlay" class="sidebar-overlay"></div>
+      
       <nav id="sidebar" class="sidebar">
+        <button id="sidebarClose" class="sidebar-close">×</button>
         <div class="brand">Inventory System</div>
         <div class="nav" id="navlinks">
           <a href="#/dashboard" data-route="dashboard" class="active">Dashboard</a>
@@ -183,9 +224,8 @@
     </div>
   </div>
 
-  <!-- UPDATED JS FOR REAL DASHBOARD DATA -->
   <script>
-    const DEMO_USER = { username: 'Natioanl_Electric_Store', password: 'National098#$' };
+    const DEMO_USER = { username: 'National_Electric_Store', password: 'National098#$' };
     const loginScreen = document.getElementById('loginScreen');
     const app = document.getElementById('app');
     const loginForm = document.getElementById('loginForm');
@@ -196,6 +236,8 @@
     const navlinks = document.getElementById('navlinks');
     const sidebar = document.getElementById('sidebar');
     const toggleNav = document.getElementById('toggleNav');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const sidebarClose = document.getElementById('sidebarClose');
 
     function setAuth(user){ localStorage.setItem('inv_auth', JSON.stringify(user)); }
     function clearAuth(){ localStorage.removeItem('inv_auth'); }
@@ -216,7 +258,30 @@
     });
 
     document.getElementById('btnLogout').addEventListener('click', ()=>{ clearAuth(); location.hash=''; showLogin(); });
-    toggleNav.addEventListener('click', ()=> sidebar.classList.toggle('open'));
+    
+    // Toggle sidebar on mobile
+    toggleNav.addEventListener('click', () => {
+      sidebar.classList.add('open');
+      sidebarOverlay.classList.add('active');
+    });
+    
+    // Close sidebar on mobile
+    sidebarClose.addEventListener('click', closeSidebar);
+    sidebarOverlay.addEventListener('click', closeSidebar);
+    
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('active');
+    }
+    
+    // Close sidebar when clicking on a nav link on mobile
+    navlinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 860) {
+          closeSidebar();
+        }
+      });
+    });
 
     const routes = {
       'dashboard': renderDashboard,
