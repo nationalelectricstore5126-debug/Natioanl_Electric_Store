@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inventory System — Product Management</title>
+  <meta name="description" content="Inventory System Product Management page">
+
+  <style>
+    :root {
+      --bg: #0f1724;
+      --card: #1e293b;
+      --accent: #6ee7b7;
+      --muted: #94a3b8;
+    }
+
+    body {
+      font-family: "Inter", sans-serif;
+      background: var(--bg);
+      color: #e6eef6;
+      margin: 0;
+      padding: 40px 20px;
+      line-height: 1.5;
+    }
+
+    h1 {
+      color: var(--accent);
+      text-align: center;
+      margin-bottom: 8px;
+      font-size: 1.8rem;
+    }
+
+    p {
+      text-align: center;
+      color: #cbd5e1;
+      margin-bottom: 28px;
+      font-size: 0.95rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--card);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 25px;
+    }
+
+    form label {
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: #0f172a;
+      color: #e6eef6;
+      outline: none;
+      transition: 0.2s;
+    }
+
+    input:focus {
+      border: 1px solid var(--accent);
+      background: #1e293b;
+    }
+
+    button {
+      grid-column: span 2;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      background: var(--accent);
+      color: #042022;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 1rem;
+    }
+
+    button:hover {
+      background: #5ad0a5;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 100%;
+      margin-top: 20px;
+      background: #0f1724;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #334155;
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: #0b1220;
+      color: var(--accent);
+    }
+
+    tr:nth-child(even) {
+      background: #162032;
+    }
+
+    tr:hover {
+      background: #1e293b;
+    }
+
+    .delete-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .delete-btn:hover {
+      background: #dc2626;
+    }
+
+    .status-message {
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+      text-align: center;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .success {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+
+    .error {
+      background: #7f1d1d;
+      color: #fca5a5;
+      border: 1px solid #ef4444;
+    }
+
+    /* ----------- MOBILE RESPONSIVE DESIGN ----------- */
+    @media (max-width: 800px) {
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      form {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        grid-column: span 1;
+      }
+
+      input {
+        font-size: 0.95rem;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        border-radius: 10px;
+      }
+
+      th,
+      td {
+        font-size: 0.85rem;
+        padding: 8px 10px;
+      }
+
+      .delete-btn {
+        padding: 5px 10px;
+        font-size: 0.8rem;
+      }
+    }
+
+    /* For very small screens */
+    @media (max-width: 480px) {
+      body {
+        padding: 20px 10px;
+      }
+
+      h1 {
+        font-size: 1.3rem;
+      }
+
+      p {
+        font-size: 0.85rem;
+      }
+
+      .container {
+        padding: 15px;
+      }
+
+      button {
+        padding: 10px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Product Management</h1>
+  <p>Add new products with category and sub-category.</p>
+
+  <div class="container">
+    <div id="statusMessage" class="status-message"></div>
+
+    <form id="productForm">
+      <div>
+        <label for="productId">Product ID</label>
+        <input type="text" id="productId" placeholder="P001" required />
+      </div>
+      <div>
+        <label for="mainCategory">Main Category</label>
+        <input type="text" id="mainCategory" placeholder="Required category" required />
+      </div>
+      <div>
+        <label for="subCategory">Sub Category</label>
+        <input type="text" id="subCategory" placeholder="Sub category (optional)" />
+      </div>
+      <button type="submit" id="addBtn">Add Product</button>
+    </form>
+
+    <table id="productTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Main Category</th>
+          <th>Sub Category</th>
+          <th>Current Stock</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="5" style="text-align:center;">Loading products...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const form = document.getElementById('productForm');
+    const tableBody = document.querySelector('#productTable tbody');
+    const statusMessage = document.getElementById('statusMessage');
+    let allProducts = [];
+
+    // Show status message
+    function showStatus(message, type = "success") {
+      statusMessage.textContent = message;
+      statusMessage.className = `status-message ${type}`;
+      statusMessage.style.display = 'block';
+      setTimeout(() => statusMessage.style.display = 'none', 5000);
+    }
+
+    async function loadProducts() {
+      try {
+        const res = await fetch('/api/products');
+        if (!res.ok) throw new Error('Failed to load products');
+        allProducts = await res.json();
+        renderTable(allProducts);
+      } catch (err) {
+        console.error('Load error:', err);
+        showStatus('Failed to load products', 'error');
+        tableBody.innerHTML =
+          '<tr><td colspan="5" style="text-align:center; color:#ef4444;">Failed to load products</td></tr>';
+      }
+    }
+
+    function renderTable(products) {
+      tableBody.innerHTML = '';
+      if (!products || products.length === 0) {
+        tableBody.innerHTML =
+          '<tr><td colspan="5" style="text-align:center;">No products found</td></tr>';
+        return;
+      }
+
+      products.forEach(p => {
+        const productId = p.ID || p.id || p['Product ID'] || 'N/A';
+        const mainCategory = p['Main Category'] || p.mainCat || p.category || 'N/A';
+        const subCategory = p['Sub Category'] || p.subCat || p.subcategory || '-';
+        const quantity = p.Quantity || p.quantity || p.stock || 0;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${productId}</td>
+          <td>${mainCategory}</td>
+          <td>${subCategory}</td>
+          <td>${quantity}</td>
+          <td><button class="delete-btn">Delete</button></td>
+        `;
+
+        const deleteBtn = row.querySelector('.delete-btn');
+        deleteBtn.addEventListener('click', () => deleteProduct(productId));
+        tableBody.appendChild(row);
+      });
+    }
+
+    function productExists(productId, mainCategory, subCategory) {
+      return allProducts.some(product => {
+        const existingId = product.ID || product.id || product['Product ID'];
+        const existingMainCat = product['Main Category'] || product.mainCat || product.category;
+        const existingSubCat = product['Sub Category'] || product.subCat || product.subcategory || '';
+        return existingId === productId ||
+          (existingMainCat === mainCategory && existingSubCat === subCategory);
+      });
+    }
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const productId = document.getElementById('productId').value.trim().toUpperCase();
+      const mainCategory = document.getElementById('mainCategory').value.trim();
+      const subCategory = document.getElementById('subCategory').value.trim();
+
+      if (!productId || !mainCategory) {
+        showStatus('❌ Product ID and Main Category are required', 'error');
+        return;
+      }
+
+      if (productExists(productId, mainCategory, subCategory)) {
+        showStatus('❌ Product already exists', 'error');
+        return;
+      }
+
+      const payload = { id: productId, mainCat: mainCategory, subCat: subCategory, quantity: 0 };
+      try {
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          showStatus(`✅ ${data.message || 'Product added successfully!'}`);
+          form.reset();
+          await loadProducts();
+        } else {
+          showStatus(`❌ ${data.error || 'Failed to add product'}`, 'error');
+        }
+      } catch (err) {
+        console.error('POST error:', err);
+        showStatus('❌ Error adding product', 'error');
+      }
+    });
+
+    async function deleteProduct(id) {
+      if (!confirm('Are you sure you want to delete this product?')) return;
+      try {
+        const res = await fetch(`/api/products?id=${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+          showStatus(`✅ ${data.message || 'Product deleted!'}`);
+          await loadProducts();
+        } else {
+          showStatus(`❌ ${data.error || 'Delete failed'}`, 'error');
+        }
+      } catch (err) {
+        console.error('Delete error:', err);
+        showStatus('❌ Failed to delete product', 'error');
+      }
+    }
+
+    setInterval(() => loadProducts(), 30000);
+    loadProducts();
+  </script>
+</body>
+</html>

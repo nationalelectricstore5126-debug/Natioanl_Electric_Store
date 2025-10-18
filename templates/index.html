@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inventory System — Dashboard</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#6ee7b7; --muted:#94a3b8; --glass: rgba(255,255,255,0.03);
+      --nav-w:260px;
+    }
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{min-height:100vh;background:linear-gradient(180deg,#071226 0%, #081827 60%);color:#e6eef6;margin:0}
+
+    /* LOGIN */
+    .center-wrap{display:grid;place-items:center;min-height:100vh;padding:20px}
+    .card{
+      width:100%;
+      max-width:960px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:12px;
+      box-shadow:0 6px 30px rgba(2,8,23,0.6);
+      overflow:hidden;
+      display:flex;
+    }
+    .left{flex:1;padding:36px 28px;background:linear-gradient(135deg, rgba(110,231,183,0.06), rgba(139,92,246,0.03));}
+    .logo{font-weight:700;letter-spacing:0.6px;font-size:22px;margin-bottom:14px}
+    .lead{color:var(--muted);margin-bottom:20px}
+    .right{width:420px;padding:36px 28px;background:var(--card)}
+    form{display:flex;flex-direction:column;gap:12px}
+    label{font-size:13px;color:var(--muted)}
+    input[type=text],input[type=password]{padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;outline:none}
+    .btn{padding:12px 16px;border-radius:9px;border:none;background:var(--accent);color:#042022;font-weight:700;cursor:pointer}
+    .btn:active{opacity:0.9;transform:scale(0.98);}
+    .muted{font-size:13px;color:var(--muted)}
+    .error{color:#ffb4b4;font-size:13px}
+
+    /* APP */
+    .app{display:none;height:100vh}
+    .sidebar{
+      width:var(--nav-w);
+      background:linear-gradient(180deg,#051225, #061527);
+      padding:18px;
+      border-right:1px solid rgba(255,255,255,0.02);
+      min-height:100vh;
+      transition:left 0.25s;
+    }
+    .brand{font-weight:700;margin-bottom:14px}
+    .nav{display:flex;flex-direction:column;gap:8px}
+    .nav a{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;color:var(--muted);text-decoration:none;transition:0.2s}
+    .nav a.active{background:var(--glass);color:var(--accent)}
+    .nav a:hover{color:var(--accent)}
+    .logout{margin-top:auto;padding-top:20px}
+
+    .main{flex:1;padding:22px;overflow-x:hidden}
+    header.app-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .card-small{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:16px;border-radius:10px;text-align:center}
+    
+    /* Dashboard specific styles */
+    .dashboard-value {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 8px 0;
+    }
+    .positive { color: #6ee7b7; }
+    .negative { color: #ef4444; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .stat-item {
+      text-align: center;
+      padding: 10px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 8px;
+    }
+    .stat-label {
+      color: #94a3b8;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+    .stat-value {
+      color: #6ee7b7;
+      font-weight: bold;
+    }
+
+    /* RESPONSIVE RULES */
+    @media (max-width:860px){
+      .card{flex-direction:column;max-width:500px}
+      .left,.right{width:100%;padding:28px 22px;text-align:center}
+      .left h2{font-size:20px;margin-bottom:10px}
+      .btn{width:100%}
+
+      .sidebar{
+        position:fixed;
+        left:-300px;
+        top:0;
+        height:100%;
+        z-index:40;
+        width:240px;
+      }
+      .sidebar.open{left:0}
+      .app{padding-left:0}
+      #toggleNav{
+        background:none;
+        border:none;
+        font-size:22px;
+        color:var(--accent);
+        cursor:pointer;
+        margin-right:8px;
+      }
+      header.app-header strong{font-size:16px}
+    }
+
+    @media (max-width:480px){
+      body{font-size:15px}
+      .logo{font-size:20px}
+      .lead{font-size:14px}
+      input[type=text],input[type=password]{font-size:14px}
+      .card-small h4{font-size:14px}
+      .dashboard-value { font-size: 20px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- LOGIN -->
+  <div id="loginScreen" class="center-wrap">
+    <div class="card">
+      <div class="left">
+        <div class="logo">Natioanl_Electric_Store</div>
+        <h3>Your trusted destination for quality electrical products, unbeatable prices, and fast service — all in one place!  
+        We power your home and business with reliability, innovation, and care. 💡</h3>
+        <p class="lead">Please sign in to access your inventory dashboard.</p>
+      </div>
+      <div class="right">
+        <h3>Sign in</h3>
+        <form id="loginForm">
+          <label>Username</label>
+          <input id="username" type="text" placeholder="admin" required />
+          <label>Password</label>
+          <input id="password" type="password" placeholder="••••••••" required />
+          <div id="error" class="error" style="display:none"></div>
+          <button type="submit" class="btn">Sign in</button>
+          <p class="muted">Demo: <strong>admin</strong> / <strong>Password123</strong></p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="app">
+    <div style="display:flex;min-height:100vh">
+      <nav id="sidebar" class="sidebar">
+        <div class="brand">Inventory System</div>
+        <div class="nav" id="navlinks">
+          <a href="#/dashboard" data-route="dashboard" class="active">Dashboard</a>
+          <a href="#/products" data-route="products">Products</a>
+          <a href="#/stock-in" data-route="stock-in">Stock In</a>
+          <a href="#/stock-out" data-route="stock-out">Stock Out</a>
+          <a href="#/reports" data-route="reports">Reports</a>
+          <a href="#/settings" data-route="settings">Settings</a>
+        </div>
+        <div class="logout">
+          <button id="btnLogout" class="btn" style="width:100%">Logout</button>
+        </div>
+      </nav>
+
+      <main class="main">
+        <header class="app-header">
+          <div>
+            <button id="toggleNav">☰</button>
+            <strong id="pageTitle">Dashboard</strong>
+          </div>
+          <div>Signed in as <span id="who">admin</span></div>
+        </header>
+
+        <section id="view"><!-- dynamic content here --></section>
+      </main>
+    </div>
+  </div>
+
+  <!-- UPDATED JS FOR REAL DASHBOARD DATA -->
+  <script>
+    const DEMO_USER = { username: 'Natioanl_Electric_Store', password: 'National098#$' };
+    const loginScreen = document.getElementById('loginScreen');
+    const app = document.getElementById('app');
+    const loginForm = document.getElementById('loginForm');
+    const errorEl = document.getElementById('error');
+    const who = document.getElementById('who');
+    const pageTitle = document.getElementById('pageTitle');
+    const view = document.getElementById('view');
+    const navlinks = document.getElementById('navlinks');
+    const sidebar = document.getElementById('sidebar');
+    const toggleNav = document.getElementById('toggleNav');
+
+    function setAuth(user){ localStorage.setItem('inv_auth', JSON.stringify(user)); }
+    function clearAuth(){ localStorage.removeItem('inv_auth'); }
+    function getAuth(){ try{ return JSON.parse(localStorage.getItem('inv_auth')); }catch(e){return null;} }
+
+    loginForm.addEventListener('submit', e=>{
+      e.preventDefault();
+      const u = username.value.trim();
+      const p = password.value.trim();
+      errorEl.style.display='none';
+      if(u===DEMO_USER.username && p===DEMO_USER.password){
+        setAuth({ username:u });
+        showApp(); location.hash='#/dashboard';
+      } else {
+        errorEl.textContent='Invalid username or password.';
+        errorEl.style.display='block';
+      }
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', ()=>{ clearAuth(); location.hash=''; showLogin(); });
+    toggleNav.addEventListener('click', ()=> sidebar.classList.toggle('open'));
+
+    const routes = {
+      'dashboard': renderDashboard,
+      'products': ()=> loadModule('/template/Product.html'),
+      'stock-in': ()=> loadModule('/template/Stock.html'),
+      'stock-out': ()=> loadModule('/template/Stock.html'),
+      'reports': ()=> loadModule('/template/Reports.html'),
+      'settings': ()=> loadModule('/template/Settings.html') 
+    };
+
+    function route(){
+      const auth = getAuth();
+      if(!auth){ showLogin(); return; }
+      showApp();
+      const hash = location.hash.replace('#/','') || 'dashboard';
+      Array.from(navlinks.querySelectorAll('a')).forEach(a=> a.classList.toggle('active', a.dataset.route===hash));
+      pageTitle.textContent = capitalize(hash.replace('-', ' '));
+      who.textContent = auth.username;
+      const r = routes[hash];
+      if(r) r(); else renderNotFound();
+    }
+
+    window.addEventListener('hashchange', route);
+
+    // ✅ UPDATED DASHBOARD WITH REAL DATA
+    function renderDashboard(){
+      view.innerHTML = `<div class="cards">
+          <div class="card-small">
+            <h4>Total Products</h4>
+            <div class="dashboard-value" id="totalProducts">Loading...</div>
+          </div>
+          <div class="card-small">
+            <h4>Stock In (This Month)</h4>
+            <div class="dashboard-value" id="monthlyStockIn">Loading...</div>
+          </div>
+          <div class="card-small">
+            <h4>Stock Out (This Month)</h4>
+            <div class="dashboard-value" id="monthlyStockOut">Loading...</div>
+          </div>
+          <div class="card-small">
+            <h4>Balance</h4>
+            <div class="dashboard-value" id="balance">Loading...</div>
+          </div>
+        </div>
+        <div id="additionalStats" style="margin-top:20px; background:var(--card); padding:15px; border-radius:8px;">
+          <h4 style="color:#6ee7b7; margin-bottom:10px; text-align:center;">📊 Quick Stats</h4>
+          <div class="stats-grid" id="statsGrid">
+            <div class="stat-item">
+              <div class="stat-label">Net Movement</div>
+              <div class="stat-value" id="netMovement">0</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Total Sales</div>
+              <div class="stat-value" id="totalSales">0</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Total Purchases</div>
+              <div class="stat-value" id="totalPurchases">0</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Stock Ratio</div>
+              <div class="stat-value" id="stockRatio">0%</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:15px; text-align:center;">
+          <p style="color:#94a3b8; margin:0; font-size:12px;">🔄 Auto-updates every 30 seconds</p>
+        </div>`;
+      
+      // Load real data from Google Sheets
+      fetchDashboardData();
+    }
+
+    // ✅ NEW FUNCTION: Fetch real data from backend
+    async function fetchDashboardData() {
+      try {
+        const response = await fetch('/api/dashboard-stats');
+        const data = await response.json();
+        
+        if (response.ok) {
+          // Format numbers properly
+          const formatNumber = (num) => {
+            return num.toLocaleString('en-IN');
+          };
+          
+          const formatCurrency = (num) => {
+            return '' + Math.abs(num).toLocaleString('en-IN');
+          };
+
+          // Update main dashboard cards
+          document.getElementById('totalProducts').textContent = formatNumber(data.totalProducts);
+          document.getElementById('monthlyStockIn').textContent = formatNumber(data.monthlyStockIn);
+          document.getElementById('monthlyStockOut').textContent = formatNumber(data.monthlyStockOut);
+          
+          // Update balance with color coding
+          const balanceElement = document.getElementById('balance');
+          balanceElement.textContent = formatCurrency(data.balance);
+          balanceElement.className = `dashboard-value ${data.balance >= 0 ? 'positive' : 'negative'}`;
+          
+          // Update additional stats
+          document.getElementById('netMovement').textContent = (data.monthlyStockIn - data.monthlyStockOut >= 0 ? '+' : '') + (data.monthlyStockIn - data.monthlyStockOut);
+          document.getElementById('netMovement').className = `stat-value ${data.monthlyStockIn - data.monthlyStockOut >= 0 ? 'positive' : 'negative'}`;
+          
+          document.getElementById('totalSales').textContent = formatCurrency(data.totalSales);
+          document.getElementById('totalPurchases').textContent = formatCurrency(data.totalPurchases);
+          
+          // Calculate stock ratio
+          const stockRatio = data.monthlyStockOut > 0 ? ((data.monthlyStockIn / data.monthlyStockOut) * 100).toFixed(1) : 0;
+          document.getElementById('stockRatio').textContent = stockRatio + '%';
+          
+        } else {
+          throw new Error('Failed to fetch dashboard data');
+        }
+      } catch (error) {
+        console.error('Dashboard error:', error);
+        // Show error state
+        document.getElementById('totalProducts').textContent = 'Error';
+        document.getElementById('monthlyStockIn').textContent = 'Error';
+        document.getElementById('monthlyStockOut').textContent = 'Error';
+        document.getElementById('balance').textContent = 'Error';
+        document.getElementById('balance').className = 'dashboard-value negative';
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.innerHTML = `<p style="color:#ef4444; text-align:center; margin-top:10px;">Failed to load dashboard data</p>`;
+        view.appendChild(errorDiv);
+      }
+    }
+
+    // ✅ AUTO-REFRESH DASHBOARD
+    function startDashboardAutoRefresh() {
+      setInterval(() => {
+        if (location.hash === '#/dashboard') {
+          console.log('🔄 Auto-refreshing dashboard...');
+          fetchDashboardData();
+        }
+      }, 30000); // 30 seconds
+    }
+
+    function renderSettings(){ view.innerHTML=`<h3>Settings</h3><p>Coming soon.</p>`; }
+    function renderNotFound(){ view.innerHTML=`<h3>Not Found</h3>`; }
+
+    async function loadModule(url){
+      try{
+        const res = await fetch(url);
+        if(!res.ok) throw new Error('Failed to load module');
+        const html = await res.text();
+        view.innerHTML = html;
+        initModuleScripts(view);
+      }catch(err){
+        console.error('loadModule error:', err);
+        view.innerHTML = `<p style="color:red;">Failed to load ${url}</p>`;
+      }
+    }
+
+    function initModuleScripts(container){
+      container.querySelectorAll("script").forEach(oldScript=>{
+        const newScript = document.createElement("script");
+        if(oldScript.src){ newScript.src = oldScript.src; }
+        else { newScript.textContent = oldScript.textContent; }
+        oldScript.replaceWith(newScript);
+      });
+    }
+
+    function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+    function showLogin(){ loginScreen.style.display='grid'; app.style.display='none'; }
+    function showApp(){ loginScreen.style.display='none'; app.style.display='block'; }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const auth = getAuth();
+      if(auth){ 
+        showApp(); 
+        if(!location.hash) location.hash='#/dashboard'; 
+        route(); 
+        startDashboardAutoRefresh(); // ✅ Auto-refresh start karo
+      } else showLogin();
+    });
+  </script>
+</body>
+</html>

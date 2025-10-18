@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inventory System — Reports</title>
+  <style>
+    body {
+      font-family: "Inter", sans-serif;
+      background: #0f1724;
+      color: #e6eef6;
+      padding: 40px 20px;
+      margin: 0;
+    }
+    h1, h2 {
+      color: #6ee7b7;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    .controls {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+      align-items: end;
+      justify-content: center;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin-bottom: 5px;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+    select, input, button {
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      background: #0f172a;
+      color: #e6eef6;
+      min-width: 150px;
+    }
+    button {
+      background: #6ee7b7;
+      color: #042022;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #5ad0a5;
+    }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .report-section {
+      margin-top: 30px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      border-radius: 8px;
+      overflow: hidden;
+      min-width: 600px;
+    }
+    th, td {
+      border: 1px solid #334155;
+      padding: 12px;
+      text-align: left;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    th {
+      background: #0b1220;
+      color: #6ee7b7;
+    }
+    tr:nth-child(even) {
+      background: #162032;
+    }
+    tr:hover {
+      background: #1e293b;
+    }
+    .positive {
+      color: #6ee7b7;
+    }
+    .negative {
+      color: #ef4444;
+    }
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    .card {
+      background: #0f172a;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      border-left: 4px solid #6ee7b7;
+    }
+    .card h3 {
+      margin: 0 0 10px 0;
+      color: #cbd5e1;
+      font-size: 14px;
+    }
+    .card .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #6ee7b7;
+    }
+    .hidden {
+      display: none;
+    }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #6ee7b7;
+    }
+    .error {
+      color: #ef4444;
+      text-align: center;
+      padding: 10px;
+      background: #1f2937;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+
+    /* ✅ Mobile Responsive Fixes */
+    @media(max-width: 768px) {
+      body {
+        padding: 20px 10px;
+      }
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+      .control-group {
+        width: 100%;
+      }
+      select, input, button {
+        width: 100%;
+      }
+      .btn-group {
+        flex-direction: column;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      th, td {
+        font-size: 13px;
+        padding: 10px;
+      }
+      .summary-cards {
+        grid-template-columns: 1fr;
+      }
+      .card .value {
+        font-size: 20px;
+      }
+      .container {
+        padding: 20px;
+      }
+    }
+
+    /* ✅ Extra small phones */
+    @media(max-width: 480px) {
+      h1 {
+        font-size: 20px;
+      }
+      h2 {
+        font-size: 18px;
+      }
+      button {
+        font-size: 14px;
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 Advanced Reports Dashboard</h1>
+  <p style="text-align:center;color:#cbd5e1">Comprehensive inventory and financial reports</p>
+
+  <div class="container">
+    <!-- Report Controls -->
+    <div class="controls">
+      <div class="control-group">
+        <label for="reportType">Report Type</label>
+        <select id="reportType" onchange="toggleDatePickers()">
+          <option value="daily">📆 Daily Report</option>
+          <option value="monthly">📅 Monthly Report</option>
+        </select>
+      </div>
+
+      <div class="control-group" id="dateGroup">
+        <label for="dateSelect">Select Date</label>
+        <input type="date" id="dateSelect">
+      </div>
+
+      <div class="control-group hidden" id="monthGroup">
+        <label for="monthSelect">Select Month</label>
+        <input type="month" id="monthSelect">
+      </div>
+
+      <div class="control-group">
+        <label>&nbsp;</label>
+        <div class="btn-group">
+          <button onclick="generateReport()">📈 Generate Report</button>
+          <button onclick="saveToSheets()" style="background:#10b981;">💾 Save to Sheets</button>
+          <button onclick="simpleExport()" style="background:#3b82f6;">📄 Export CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="errorSection" class="error hidden"></div>
+    <div id="loadingSection" class="loading hidden">⏳ Loading report data...</div>
+
+    <div class="summary-cards hidden" id="summaryCards">
+      <div class="card">
+        <h3>Total Purchases</h3>
+        <div class="value" id="totalPurchases">0</div>
+      </div>
+      <div class="card">
+        <h3>Total Sales</h3>
+        <div class="value" id="totalSales">0</div>
+      </div>
+      <div class="card">
+        <h3>Net Balance</h3>
+        <div class="value" id="netBalance">0</div>
+      </div>
+      <div class="card">
+        <h3>Products</h3>
+        <div class="value" id="totalProducts">0</div>
+      </div>
+    </div>
+
+    <div class="report-section">
+      <h2>📦 Inventory Movement</h2>
+      <table id="inventoryTable">
+        <thead>
+          <tr>
+            <th>Product ID</th>
+            <th>Main Category</th>
+            <th>Sub Category</th>
+            <th>Received</th>
+            <th>Sold</th>
+            <th>Remaining</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="6" style="text-align:center;">Select report type and generate report</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="report-section">
+      <h2>💰 Financial Summary</h2>
+      <table id="financeTable">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="3" style="text-align:center;">Select report type and generate report</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // --- Same JS as before (no functionality changed) ---
+    document.getElementById('dateSelect').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('monthSelect').value = new Date().toISOString().slice(0, 7);
+    let currentReportData = null;
+
+    function toggleDatePickers() {
+      const reportType = document.getElementById("reportType").value;
+      const monthGroup = document.getElementById("monthGroup");
+      const dateGroup = document.getElementById("dateGroup");
+      if (reportType === "monthly") {
+        monthGroup.classList.remove("hidden");
+        dateGroup.classList.add("hidden");
+      } else {
+        monthGroup.classList.add("hidden");
+        dateGroup.classList.remove("hidden");
+      }
+    }
+
+    function showError(message) {
+      const errorSection = document.getElementById('errorSection');
+      errorSection.textContent = message;
+      errorSection.classList.remove('hidden');
+    }
+
+    function hideError() {
+      document.getElementById('errorSection').classList.add('hidden');
+    }
+
+    function showLoading() {
+      hideError();
+      document.getElementById('loadingSection').classList.remove('hidden');
+      document.getElementById('summaryCards').classList.add('hidden');
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingSection').classList.add('hidden');
+    }
+
+    async function generateReport() {
+      const reportType = document.getElementById("reportType").value;
+      let endpoint, paramName, paramValue;
+      if (reportType === "monthly") {
+        endpoint = "/api/monthly-report";
+        paramName = "month";
+        paramValue = document.getElementById("monthSelect").value;
+      } else {
+        endpoint = "/api/daily-report";
+        paramName = "date";
+        paramValue = document.getElementById("dateSelect").value;
+      }
+      if (!paramValue) {
+        showError("Please select a date/month");
+        return;
+      }
+      showLoading();
+      try {
+        let formattedDate = paramValue;
+        if (reportType === "daily") {
+          const [year, month, day] = paramValue.split('-');
+          formattedDate = `${month}/${day}/${year}`;
+        }
+        const response = await fetch(`${endpoint}?${paramName}=${formattedDate}`);
+        const data = await response.json();
+        if (response.ok) {
+          currentReportData = data;
+          displayReport(data, reportType, paramValue);
+          hideError();
+        } else {
+          showError("Error generating report: " + data.error);
+        }
+      } catch (error) {
+        showError("Failed to generate report: " + error.message);
+      }
+      hideLoading();
+    }
+
+    async function saveToSheets() {
+      if (!currentReportData) {
+        showError("Please generate a report first");
+        return;
+      }
+      try {
+        const reportType = document.getElementById("reportType").value;
+        let period, dateValue;
+        if (reportType === "monthly") {
+          period = document.getElementById("monthSelect").value;
+          dateValue = period;
+        } else {
+          dateValue = document.getElementById("dateSelect").value;
+          const [year, month, day] = dateValue.split('-');
+          period = `${month}/${day}/${year}`;
+        }
+        const response = await fetch('/api/generate-report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: reportType,
+            period: period,
+            date: period
+          })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          alert('✅ Report saved to Google Sheets!');
+        } else {
+          showError('Error saving report: ' + data.error);
+        }
+      } catch (error) {
+        showError('Failed to save report: ' + error.message);
+      }
+    }
+
+    function displayReport(data, reportType, period) {
+      document.getElementById("summaryCards").classList.remove("hidden");
+      document.getElementById("totalPurchases").textContent = data.finance.purchases.toLocaleString();
+      document.getElementById("totalSales").textContent = data.finance.sales.toLocaleString();
+      const balance = data.finance.balance;
+      const balanceElement = document.getElementById("netBalance");
+      balanceElement.textContent = Math.abs(balance).toLocaleString();
+      balanceElement.className = `value ${balance >= 0 ? 'positive' : 'negative'}`;
+      document.getElementById("totalProducts").textContent = data.inventory.length;
+
+      const inventoryBody = document.querySelector("#inventoryTable tbody");
+      if (data.inventory.length === 0) {
+        inventoryBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No inventory movement for selected period</td></tr>`;
+      } else {
+        inventoryBody.innerHTML = data.inventory.map(item => `
+          <tr>
+            <td>${item.id}</td>
+            <td>${item.mainCat || '-'}</td>
+            <td>${item.subCat || '-'}</td>
+            <td>${item.received}</td>
+            <td>${item.sold}</td>
+            <td class="${(item.remaining || 0) >= 0 ? 'positive' : 'negative'}">${item.remaining || 0}</td>
+          </tr>`).join('');
+      }
+
+      const financeBody = document.querySelector("#financeTable tbody");
+      financeBody.innerHTML = `
+        <tr>
+          <td><strong>Total Purchases Value</strong></td>
+          <td class="negative">${data.finance.purchases.toLocaleString()}</td>
+          <td>Total amount spent on stock purchases</td>
+        </tr>
+        <tr>
+          <td><strong>Total Sales Revenue</strong></td>
+          <td class="positive">${data.finance.sales.toLocaleString()}</td>
+          <td>Total revenue from product sales</td>
+        </tr>
+        <tr>
+          <td><strong>Net ${data.finance.balance >= 0 ? 'Profit' : 'Loss'}</strong></td>
+          <td class="${data.finance.balance >= 0 ? 'positive' : 'negative'}">${Math.abs(data.finance.balance).toLocaleString()}</td>
+          <td>${data.finance.balance >= 0 ? 'Profit' : 'Loss'} from business operations</td>
+        </tr>`;
+    }
+
+    function simpleExport() {
+      if (!currentReportData) {
+        showError("Please generate a report first");
+        return;
+      }
+      try {
+        let csvContent = "Product ID,Main Category,Sub Category,Received,Sold,Remaining\n";
+        currentReportData.inventory.forEach(item => {
+          csvContent += `"${item.id}","${item.mainCat || '-'}","${item.subCat || '-'}",${item.received},${item.sold},${item.remaining || 0}\n`;
+        });
+        csvContent += `\nFinancial Summary\n`;
+        csvContent += `Total Purchases,${currentReportData.finance.purchases}\n`;
+        csvContent += `Total Sales,${currentReportData.finance.sales}\n`;
+        csvContent += `Net Balance,${currentReportData.finance.balance}\n`;
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const reportType = document.getElementById("reportType").value;
+        const period = reportType === 'monthly' ? document.getElementById("monthSelect").value : document.getElementById("dateSelect").value;
+        a.download = `inventory-${reportType}-report-${period}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        showError('Failed to export CSV: ' + error.message);
+      }
+    }
+
+    toggleDatePickers();
+    window.addEventListener('load', () => setTimeout(generateReport, 1000));
+  </script>
+</body>
+</html>

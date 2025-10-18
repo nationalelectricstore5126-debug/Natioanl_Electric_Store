@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inventory System — Settings</title>
+  <style>
+    body {
+      font-family: "Inter", sans-serif;
+      background: #0f1724;
+      color: #e6eef6;
+      padding: 20px;
+      margin: 0;
+    }
+    h1, h2 {
+      color: #6ee7b7;
+      margin-bottom: 15px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #0f172a;
+      border-radius: 8px;
+      border-left: 4px solid #6ee7b7;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #e6eef6;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: #6ee7b7;
+    }
+    button {
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: none;
+      background: #6ee7b7;
+      color: #042022;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background: #5ad0a5;
+    }
+    button.danger {
+      background: #ef4444;
+      color: white;
+    }
+    button.danger:hover {
+      background: #dc2626;
+    }
+    .card {
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #334155;
+    }
+    .categories-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .status-message {
+      padding: 12px;
+      border-radius: 8px;
+      margin: 10px 0;
+      text-align: center;
+      display: none;
+    }
+    .success {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .error {
+      background: #7f1d1d;
+      color: #fca5a5;
+      border: 1px solid #ef4444;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #334155;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background: #0b1220;
+      color: #6ee7b7;
+    }
+    tr:nth-child(even) {
+      background: #162032;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      .categories-grid {
+        grid-template-columns: 1fr;
+      }
+      th, td {
+        padding: 8px 10px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⚙️ Settings & Category Management</h1>
+    
+    <div id="statusMessage" class="status-message"></div>
+
+    <!-- Product Category Management Section -->
+    <div class="section">
+      <h2>📦 Update Product Categories</h2>
+      <p>Change main category or sub-category for existing products</p>
+      
+      <div class="form-group">
+        <label for="productSelect">Select Product</label>
+        <select id="productSelect">
+          <option value="">-- Choose Product --</option>
+        </select>
+      </div>
+      
+      <div id="productDetails" style="display: none;">
+        <div class="card">
+          <strong>Current Categories:</strong><br>
+          Main: <span id="currentMainCat" style="color:#6ee7b7;"></span><br>
+          Sub: <span id="currentSubCat" style="color:#6ee7b7;"></span>
+        </div>
+        
+        <div class="form-group">
+          <label for="newMainCategory">New Main Category</label>
+          <input type="text" id="newMainCategory" placeholder="Enter new main category">
+        </div>
+        
+        <div class="form-group">
+          <label for="newSubCategory">New Sub Category (Optional)</label>
+          <input type="text" id="newSubCategory" placeholder="Enter new sub category">
+        </div>
+        
+        <button onclick="updateProductCategories()">💾 Update Product Categories</button>
+      </div>
+    </div>
+
+    <!-- Categories Management Section -->
+    <div class="section">
+      <h2>📂 Manage Categories</h2>
+      
+      <div class="categories-grid">
+        <!-- Main Categories -->
+        <div>
+          <h3>➕ Add New Main Category</h3>
+          <div class="form-group">
+            <input type="text" id="newMainCat" placeholder="Enter new main category name">
+          </div>
+          <button onclick="addMainCategory()">Add Main Category</button>
+          
+          <h3 style="margin-top: 20px;">📋 Existing Main Categories</h3>
+          <div id="mainCategoriesList"></div>
+        </div>
+        
+        <!-- Sub Categories -->
+        <div>
+          <h3>➕ Add New Sub Category</h3>
+          <div class="form-group">
+            <label for="parentMainCategory">Parent Main Category</label>
+            <select id="parentMainCategory">
+              <option value="">-- Select Main Category --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <input type="text" id="newSubCat" placeholder="Enter new sub category name">
+          </div>
+          <button onclick="addSubCategory()">Add Sub Category</button>
+          
+          <h3 style="margin-top: 20px;">📋 Existing Sub Categories</h3>
+          <div id="subCategoriesList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- All Products Table -->
+    <div class="section">
+      <h2>📊 All Products & Categories</h2>
+      <table id="productsTable">
+        <thead>
+          <tr>
+            <th>Product ID</th>
+            <th>Main Category</th>
+            <th>Sub Category</th>
+            <th>Current Stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="4" style="text-align:center;">Loading products...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let categoriesData = {};
+    let allProducts = [];
+
+    // Show status message
+    function showStatus(message, type = "success") {
+      const statusMessage = document.getElementById('statusMessage');
+      statusMessage.textContent = message;
+      statusMessage.className = `status-message ${type}`;
+      statusMessage.style.display = 'block';
+      setTimeout(() => statusMessage.style.display = 'none', 5000);
+    }
+
+    // Load categories and products
+    async function loadData() {
+      try {
+        // Load categories
+        const categoriesRes = await fetch('/api/categories');
+        if (categoriesRes.ok) {
+          categoriesData = await categoriesRes.json();
+          renderCategories();
+        }
+
+        // Load products for dropdown and table
+        const productsRes = await fetch('/api/products-with-categories');
+        if (productsRes.ok) {
+          allProducts = await productsRes.json();
+          populateProductDropdown();
+          renderProductsTable();
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        showStatus('Failed to load data', 'error');
+      }
+    }
+
+    // Render categories lists
+    function renderCategories() {
+      // Main categories
+      const mainList = document.getElementById('mainCategoriesList');
+      mainList.innerHTML = '';
+      
+      categoriesData.main_categories.forEach(category => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <strong>${category}</strong>
+          <button class="danger" onclick="deleteCategory('main', '${category}')" style="float:right; padding:5px 10px; font-size:12px;">Delete</button>
+        `;
+        mainList.appendChild(card);
+      });
+
+      // Parent main category dropdown for sub-categories
+      const parentSelect = document.getElementById('parentMainCategory');
+      parentSelect.innerHTML = '<option value="">-- Select Main Category --</option>';
+      categoriesData.main_categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        parentSelect.appendChild(option);
+      });
+
+      // Sub categories
+      const subList = document.getElementById('subCategoriesList');
+      subList.innerHTML = '';
+      
+      Object.entries(categoriesData.sub_categories).forEach(([mainCat, subCats]) => {
+        if (subCats.length > 0) {
+          const section = document.createElement('div');
+          section.innerHTML = `<strong>${mainCat}:</strong>`;
+          subList.appendChild(section);
+          
+          subCats.forEach(subCat => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+              ${subCat}
+              <button class="danger" onclick="deleteCategory('sub', '${subCat}', '${mainCat}')" style="float:right; padding:5px 10px; font-size:12px;">Delete</button>
+            `;
+            subList.appendChild(card);
+          });
+        }
+      });
+    }
+
+    // Populate product dropdown
+    function populateProductDropdown() {
+      const productSelect = document.getElementById('productSelect');
+      productSelect.innerHTML = '<option value="">-- Choose Product --</option>';
+      
+      allProducts.forEach(product => {
+        const option = document.createElement('option');
+        option.value = product.id;
+        option.textContent = `${product.id} - ${product.main_category}`;
+        option.dataset.product = JSON.stringify(product);
+        productSelect.appendChild(option);
+      });
+    }
+
+    // Handle product selection
+    document.getElementById('productSelect').addEventListener('change', function() {
+      const productDetails = document.getElementById('productDetails');
+      
+      if (this.value === '') {
+        productDetails.style.display = 'none';
+        return;
+      }
+      
+      const selectedOption = this.options[this.selectedIndex];
+      const product = JSON.parse(selectedOption.dataset.product);
+      
+      document.getElementById('currentMainCat').textContent = product.main_category;
+      document.getElementById('currentSubCat').textContent = product.sub_category || 'None';
+      document.getElementById('newMainCategory').value = product.main_category;
+      document.getElementById('newSubCategory').value = product.sub_category || '';
+      
+      productDetails.style.display = 'block';
+    });
+
+    // Update product categories
+    async function updateProductCategories() {
+      const productId = document.getElementById('productSelect').value;
+      const newMain = document.getElementById('newMainCategory').value.trim();
+      const newSub = document.getElementById('newSubCategory').value.trim();
+      
+      if (!productId || !newMain) {
+        showStatus('Product ID and main category are required', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_product',
+            product_id: productId,
+            main_category: newMain,
+            sub_category: newSub
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showStatus(data.message);
+          // Reset form and reload data
+          document.getElementById('productSelect').value = '';
+          document.getElementById('productDetails').style.display = 'none';
+          loadData();
+        } else {
+          showStatus(data.error, 'error');
+        }
+      } catch (error) {
+        console.error('Error updating product:', error);
+        showStatus('Failed to update product', 'error');
+      }
+    }
+
+    // Add main category
+    async function addMainCategory() {
+      const newCategory = document.getElementById('newMainCat').value.trim();
+      
+      if (!newCategory) {
+        showStatus('Please enter a category name', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'add_main',
+            category: newCategory
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showStatus(data.message);
+          document.getElementById('newMainCat').value = '';
+          loadData();
+        } else {
+          showStatus(data.error, 'error');
+        }
+      } catch (error) {
+        console.error('Error adding category:', error);
+        showStatus('Failed to add category', 'error');
+      }
+    }
+
+    // Add sub category
+    async function addSubCategory() {
+      const mainCategory = document.getElementById('parentMainCategory').value;
+      const newSub = document.getElementById('newSubCat').value.trim();
+      
+      if (!mainCategory || !newSub) {
+        showStatus('Please select main category and enter sub-category name', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'add_sub',
+            main_category: mainCategory,
+            sub_category: newSub
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showStatus(data.message);
+          document.getElementById('newSubCat').value = '';
+          loadData();
+        } else {
+          showStatus(data.error, 'error');
+        }
+      } catch (error) {
+        console.error('Error adding sub-category:', error);
+        showStatus('Failed to add sub-category', 'error');
+      }
+    }
+
+    // Delete category
+    async function deleteCategory(type, categoryName, mainCategory = '') {
+      if (!confirm(`Are you sure you want to delete ${type} category "${categoryName}"?`)) {
+        return;
+      }
+      
+      try {
+        const payload = {
+          type: type,
+          category: categoryName
+        };
+        
+        if (type === 'sub') {
+          payload.main_category = mainCategory;
+        }
+        
+        const response = await fetch('/api/categories', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showStatus(data.message);
+          loadData();
+        } else {
+          showStatus(data.error, 'error');
+        }
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        showStatus('Failed to delete category', 'error');
+      }
+    }
+
+    // Render products table
+    function renderProductsTable() {
+      const tableBody = document.querySelector('#productsTable tbody');
+      tableBody.innerHTML = '';
+      
+      if (allProducts.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No products found</td></tr>';
+        return;
+      }
+      
+      allProducts.forEach(product => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${product.id}</td>
+          <td>${product.main_category}</td>
+          <td>${product.sub_category || '-'}</td>
+          <td>${product.current_stock}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Auto-refresh every 30 seconds
+    setInterval(loadData, 30000);
+    
+    // Initial load
+    loadData();
+  </script>
+</body>
+</html>

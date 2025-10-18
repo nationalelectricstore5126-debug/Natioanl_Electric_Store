@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inventory System — Stock Management</title>
+  <style>
+    body { 
+      font-family:"Inter",sans-serif; 
+      background:#0f1724; 
+      color:#e6eef6; 
+      padding:20px; 
+      margin:0; 
+    }
+    h1 { 
+      color:#6ee7b7; 
+      text-align:center; 
+      margin-bottom:10px; 
+      font-size: 1.8rem;
+    }
+    p { 
+      text-align:center; 
+      color:#cbd5e1; 
+      margin-bottom:20px; 
+    }
+    .container { 
+      max-width:900px; 
+      margin:0 auto; 
+      background:#1e293b; 
+      padding:20px; 
+      border-radius:12px; 
+      box-shadow:0 4px 12px rgba(0,0,0,0.4); 
+    }
+    
+    /* Form Controls */
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label { 
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #cbd5e1;
+    }
+    select, input { 
+      width:100%; 
+      padding:12px; 
+      border-radius:8px; 
+      border:1px solid #334155; 
+      background:#0f172a; 
+      color:#e6eef6; 
+      outline:none; 
+      transition:0.2s; 
+      font-size: 16px; /* Prevents zoom on iOS */
+    }
+    select:focus, input:focus { 
+      border:1px solid #6ee7b7; 
+      background:#1e293b; 
+    }
+    
+    /* Buttons */
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    button { 
+      padding:14px; 
+      border-radius:8px; 
+      border:none; 
+      background:#6ee7b7; 
+      color:#042022; 
+      font-weight:700; 
+      cursor:pointer; 
+      transition:0.2s; 
+      font-size: 16px;
+    }
+    button:hover { 
+      background:#5ad0a5; 
+    }
+    
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin: 20px 0;
+    }
+    table { 
+      border-collapse:collapse; 
+      width:100%; 
+      border-radius:8px; 
+      overflow:hidden; 
+      min-width: 600px; /* Ensures table doesn't get too narrow */
+    }
+    th, td { 
+      border:1px solid #334155; 
+      padding:12px; 
+      text-align:left; 
+    }
+    th { 
+      background:#0b1220; 
+      color:#6ee7b7; 
+      font-weight: 600;
+    }
+    tr:nth-child(even) { 
+      background:#162032; 
+    }
+    tr:hover { 
+      background:#1e293b; 
+    }
+    
+    /* Product Info */
+    .product-info { 
+      background:#0f172a; 
+      padding:15px; 
+      border-radius:8px; 
+      margin-bottom:15px; 
+      border-left:4px solid #6ee7b7; 
+      display: none;
+    }
+    .product-info div { 
+      margin:6px 0; 
+    }
+    .no-subcategory { 
+      color:#94a3b8; 
+      font-style:italic; 
+    }
+    
+    /* Status Messages */
+    .status-message { 
+      padding: 12px; 
+      border-radius: 8px; 
+      margin: 15px 0; 
+      text-align: center;
+      display: none;
+    }
+    .success { 
+      background: #064e3b; 
+      color: #6ee7b7; 
+      border: 1px solid #10b981; 
+    }
+    .error { 
+      background: #7f1d1d; 
+      color: #fca5a5; 
+      border: 1px solid #ef4444; 
+    }
+    
+    /* Stock Status Colors */
+    .stock-in { color:#6ee7b7; }
+    .stock-out { color:#ef4444; }
+    .low-stock { color: #fbbf24; }
+    .out-of-stock { color: #ef4444; }
+    
+    /* Section Headers */
+    .section-header {
+      color: #6ee7b7;
+      margin: 25px 0 15px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #334155;
+    }
+    
+    /* Mobile Styles */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      .container {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      .button-group {
+        grid-template-columns: 1fr;
+      }
+      th, td {
+        padding: 10px 8px;
+        font-size: 14px;
+      }
+      .section-header {
+        font-size: 1.2rem;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.3rem;
+      }
+      .container {
+        padding: 12px;
+      }
+      select, input, button {
+        padding: 10px;
+      }
+      .product-info {
+        padding: 12px;
+      }
+    }
+    
+    /* Filter Section */
+    .filter-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    @media (max-width: 600px) {
+      .filter-section {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Stock In / Stock Out</h1>
+  <p>Manage inventory by adding or reducing product quantities.</p>
+
+  <div class="container">
+    <div id="statusMessage" class="status-message"></div>
+    
+    <!-- Filters -->
+    <div class="filter-section">
+      <div class="form-group">
+        <label for="mainCategoryFilter">Filter by Main Category</label>
+        <select id="mainCategoryFilter">
+          <option value="">All Categories</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="subCategoryFilter">Filter by Sub Category</label>
+        <select id="subCategoryFilter">
+          <option value="">All Sub Categories</option>
+        </select>
+      </div>
+    </div>
+    
+    <!-- Product Selection -->
+    <div class="form-group">
+      <label for="productSelect">Select Product</label>
+      <select id="productSelect">
+        <option value="">-- Choose Product --</option>
+      </select>
+    </div>
+
+    <!-- Product Info -->
+    <div id="productInfo" class="product-info">
+      <strong>Selected Product Details:</strong>
+      <div>🆔 Product ID: <span id="selectedId" style="color:#6ee7b7;"></span></div>
+      <div>📁 Main Category: <span id="selectedMainCat" style="color:#6ee7b7;"></span></div>
+      <div>📂 Sub Category: <span id="selectedSubCat" class="no-subcategory"></span></div>
+      <div>📦 Current Stock: <span id="selectedStock" style="color:#6ee7b7;"></span></div>
+    </div>
+
+    <!-- Quantity and Price -->
+    <div class="form-group">
+      <label for="quantity">Quantity</label>
+      <input type="number" id="quantity" placeholder="Enter quantity" min="1" />
+    </div>
+    
+    <div class="form-group">
+      <label for="price">Price per Unit</label>
+      <input type="number" id="price" placeholder="Enter price per unit" min="0" step="0.01" />
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="button-group">
+      <button id="btnStockIn">📥 Stock In (Purchase)</button>
+      <button id="btnStockOut">📤 Stock Out (Sale)</button>
+    </div>
+
+    <!-- Stock Overview -->
+    <h2 class="section-header">Product Stock Overview</h2>
+    <div class="table-container">
+      <table id="stockTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Main Category</th>
+            <th>Sub Category</th>
+            <th>Quantity</th>
+            <th>Last Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="5" style="text-align:center;">Loading products...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Recent Transactions -->
+    <h2 class="section-header">Recent Stock Transactions</h2>
+    <div class="table-container">
+      <table id="transactionTable">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Product ID</th>
+            <th>Main Category</th>
+            <th>Sub Category</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="7" style="text-align:center;">Loading transactions...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+  const mainCategoryFilter = document.getElementById("mainCategoryFilter");
+  const subCategoryFilter = document.getElementById("subCategoryFilter");
+  const productSelect = document.getElementById("productSelect");
+  const productInfo = document.getElementById("productInfo");
+  const quantityInput = document.getElementById("quantity");
+  const priceInput = document.getElementById("price");
+  const stockTableBody = document.querySelector("#stockTable tbody");
+  const transactionTableBody = document.querySelector("#transactionTable tbody");
+  const statusMessage = document.getElementById("statusMessage");
+  
+  let products = [];
+  let transactions = [];
+  let selectedProduct = null;
+
+  // Show status message
+  function showStatus(message, type = "success") {
+    statusMessage.textContent = message;
+    statusMessage.className = `status-message ${type}`;
+    statusMessage.style.display = 'block';
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      statusMessage.style.display = 'none';
+    }, 5000);
+  }
+
+  // Load products and transactions
+  async function loadData() {
+    try {
+      console.log('🔄 Loading data...');
+      
+      // Try alternative endpoints if primary ones fail
+      let productsRes, transactionsRes;
+      
+      try {
+        productsRes = await fetch('/api/products');
+      } catch (e) {
+        console.warn('Primary products endpoint failed, trying alternative');
+        productsRes = await fetch('/api/stock/products');
+      }
+      
+      try {
+        transactionsRes = await fetch('/api/reports');
+      } catch (e) {
+        console.warn('Primary reports endpoint failed, trying alternative');
+        transactionsRes = await fetch('/api/stock/transactions');
+      }
+      
+      if (!productsRes.ok) throw new Error('Failed to load products');
+      if (!transactionsRes.ok) throw new Error('Failed to load transactions');
+      
+      products = await productsRes.json();
+      transactions = await transactionsRes.json();
+      
+      console.log('📦 Products loaded:', products.length);
+      console.log('📊 Transactions loaded:', transactions.length);
+      
+      populateCategoryFilters();
+      populateProductDropdown();
+      renderStockTable();
+      renderTransactionTable();
+    } catch(err) {
+      console.error('❌ Load error:', err);
+      showStatus('Failed to load data. Please check your connection.', 'error');
+      stockTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ef4444;">Failed to load data</td></tr>';
+      transactionTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#ef4444;">Failed to load transactions</td></tr>';
+    }
+  }
+
+  // Populate category filters
+  function populateCategoryFilters() {
+    const selectedMainCat = mainCategoryFilter.value;
+    
+    // Main categories
+    const mainCategories = [...new Set(products.map(p => p.mainCat).filter(Boolean))];
+    mainCategoryFilter.innerHTML = '<option value="">All Categories</option>';
+    mainCategories.sort().forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat;
+      mainCategoryFilter.appendChild(option);
+    });
+    
+    // Set selected main category if any
+    if (selectedMainCat) {
+      mainCategoryFilter.value = selectedMainCat;
+    }
+    
+    // Sub categories - ONLY from selected main category
+    let subCategories = [];
+    if (selectedMainCat) {
+      // Sirf selected main category ke sub categories show karo
+      subCategories = [...new Set(
+        products
+          .filter(p => p.mainCat === selectedMainCat && p.subCat && p.subCat.trim() !== '')
+          .map(p => p.subCat)
+      )];
+    } else {
+      // Agar koi main category select nahi hai, toh sab sub categories show karo
+      subCategories = [...new Set(products.map(p => p.subCat).filter(cat => cat && cat.trim() !== ''))];
+    }
+    
+    subCategoryFilter.innerHTML = '<option value="">All Sub Categories</option>';
+    subCategories.sort().forEach(subCat => {
+      const option = document.createElement('option');
+      option.value = subCat;
+      option.textContent = subCat;
+      subCategoryFilter.appendChild(option);
+    });
+  }
+
+  // Populate product dropdown with categories - FIXED VERSION
+  function populateProductDropdown() {
+    const selectedMainCat = mainCategoryFilter.value;
+    const selectedSubCat = subCategoryFilter.value;
+    
+    // Filter products based on selected categories
+    let filteredProducts = products;
+    if (selectedMainCat) {
+      filteredProducts = filteredProducts.filter(p => p.mainCat === selectedMainCat);
+    }
+    if (selectedSubCat) {
+      filteredProducts = filteredProducts.filter(p => p.subCat === selectedSubCat);
+    }
+    
+    productSelect.innerHTML = '<option value="">-- Choose Product --</option>';
+    
+    if (filteredProducts.length === 0) {
+      const option = document.createElement('option');
+      option.value = "";
+      option.textContent = "No products found with selected filters";
+      productSelect.appendChild(option);
+      return;
+    }
+    
+    // Create options with product IDs and store actual product data
+    filteredProducts.forEach((product, index) => {
+      const option = document.createElement("option");
+      option.value = product.id; // Store product ID instead of index
+      
+      // Display format
+      if (product.subCat && product.subCat.trim() !== '') {
+        option.textContent = `${product.id} | ${product.subCat} | ${product.quantity || 0}`;
+      } else {
+        option.textContent = `${product.id} | ${product.quantity || 0}`;
+      }
+      
+      // Store the full product data as a data attribute
+      option.dataset.product = JSON.stringify(product);
+      
+      productSelect.appendChild(option);
+    });
+    
+    renderStockTable();
+  }
+
+  // Handle product selection - COMPLETELY FIXED VERSION
+  productSelect.addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    
+    if (this.value === "") {
+      productInfo.style.display = 'none';
+      selectedProduct = null;
+      priceInput.value = "";
+      quantityInput.value = "";
+      return;
+    }
+    
+    // Get product data from the data attribute
+    try {
+      selectedProduct = JSON.parse(selectedOption.dataset.product);
+    } catch (e) {
+      console.error('Error parsing product data:', e);
+      // Fallback: Find product by ID in the products array
+      selectedProduct = products.find(p => p.id === this.value);
+    }
+    
+    if (!selectedProduct) {
+      showStatus('❌ Error loading product details', 'error');
+      return;
+    }
+    
+    // Update the product info display
+    document.getElementById('selectedId').textContent = selectedProduct.id;
+    document.getElementById('selectedMainCat').textContent = selectedProduct.mainCat;
+    
+    // Sub category display
+    const subCatElement = document.getElementById('selectedSubCat');
+    if (selectedProduct.subCat && selectedProduct.subCat.trim() !== '') {
+      subCatElement.textContent = selectedProduct.subCat;
+      subCatElement.style.color = '#6ee7b7';
+      subCatElement.classList.remove('no-subcategory');
+    } else {
+      subCatElement.textContent = 'No Sub Category';
+      subCatElement.style.color = '#94a3b8';
+      subCatElement.classList.add('no-subcategory');
+    }
+    
+    document.getElementById('selectedStock').textContent = selectedProduct.quantity || 0;
+    
+    // Clear input fields
+    priceInput.value = "";
+    quantityInput.value = "";
+    
+    // Show product info
+    productInfo.style.display = 'block';
+    
+    console.log('✅ Product selected:', selectedProduct);
+  });
+
+  // Category filters change
+  mainCategoryFilter.addEventListener('change', function() {
+    // Pehle sub category filter ko update karo
+    populateCategoryFilters();
+    // Phir product dropdown update karo
+    populateProductDropdown();
+  });
+  
+  subCategoryFilter.addEventListener('change', populateProductDropdown);
+
+  // Handle stock operations
+  async function handleStock(type) {
+    if (!selectedProduct) {
+      showStatus("❌ Please select a product first", "error");
+      return;
+    }
+    
+    const qty = parseInt(quantityInput.value);
+    const price = parseFloat(priceInput.value);
+    
+    if (!qty || qty <= 0) {
+      showStatus("❌ Please enter a valid quantity", "error");
+      return;
+    }
+    
+    if (!price || price < 0) {
+      showStatus("❌ Please enter a valid price", "error");
+      return;
+    }
+
+    // For stock out, check available quantity
+    if (type === "out") {
+      const currentStock = selectedProduct.quantity || 0;
+      if (currentStock < qty) {
+        showStatus(`❌ Not enough stock! Available: ${currentStock}, Required: ${qty}`, "error");
+        return;
+      }
+    }
+
+    const payload = {
+      productId: selectedProduct.id,
+      quantity: qty,
+      price: price,
+      mainCat: selectedProduct.mainCat,
+      subCat: selectedProduct.subCat || ""
+    };
+
+    try {
+      let endpoint = type === "in" ? "/api/stockin" : "/api/stockout";
+      console.log(`📤 Sending ${type} request:`, payload);
+      
+      // Try alternative endpoints if primary fails
+      let res;
+      try {
+        res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {
+        console.warn('Primary endpoint failed, trying alternative');
+        endpoint = type === "in" ? "/api/stock/in" : "/api/stock/out";
+        res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+      
+      const data = await res.json();
+      if(res.ok) {
+        showStatus(`✅ ${data.message || 'Stock updated successfully!'}`);
+        
+        // REFRESH ALL DATA - IMPORTANT!
+        await loadData(); // Full data reload
+        
+        // Reset form
+        quantityInput.value = "";
+        priceInput.value = "";
+        
+        // Hide product info
+        productInfo.style.display = 'none';
+        selectedProduct = null;
+        productSelect.value = "";
+        
+      } else {
+        showStatus(`❌ ${data.error || 'Failed to update stock'}`, "error");
+      }
+    } catch(err) {
+      console.error('❌ Stock error:', err);
+      showStatus('❌ Failed to update stock. Please check console for details.', "error");
+    }
+  }
+
+  // Render stock table
+  function renderStockTable() {
+    stockTableBody.innerHTML = '';
+    if(!products || products.length === 0) {
+      stockTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No products found</td></tr>';
+      return;
+    }
+    
+    const selectedMainCat = mainCategoryFilter.value;
+    const selectedSubCat = subCategoryFilter.value;
+    
+    let filteredProducts = products;
+    if (selectedMainCat) {
+      filteredProducts = filteredProducts.filter(p => p.mainCat === selectedMainCat);
+    }
+    if (selectedSubCat) {
+      filteredProducts = filteredProducts.filter(p => p.subCat === selectedSubCat);
+    }
+    
+    if (filteredProducts.length === 0) {
+      stockTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No products match the selected filters</td></tr>';
+      return;
+    }
+    
+    filteredProducts.forEach(p => {
+      const row = document.createElement('tr');
+      const stockLevel = p.quantity || 0;
+      
+      // Determine stock status class
+      let stockClass = '';
+      if (stockLevel === 0) {
+        stockClass = 'out-of-stock';
+      } else if (stockLevel < 10) {
+        stockClass = 'low-stock';
+      }
+      
+      // Sub category display
+      const subCatDisplay = p.subCat && p.subCat.trim() !== '' ? p.subCat : '-';
+      
+      row.innerHTML = `
+        <td>${p.id}</td>
+        <td>${p.mainCat}</td>
+        <td>${subCatDisplay}</td>
+        <td class="${stockClass}"><strong>${stockLevel}</strong></td>
+        <td>${new Date().toLocaleString()}</td>
+      `;
+      stockTableBody.appendChild(row);
+    });
+  }
+
+  // Render transaction table
+  function renderTransactionTable() {
+    transactionTableBody.innerHTML = '';
+    if(!transactions || transactions.length === 0) {
+      transactionTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No transactions found</td></tr>';
+      return;
+    }
+    
+    // Show latest 15 transactions
+    const recentTransactions = transactions.slice(-15).reverse();
+    
+    console.log('🔄 Rendering transactions:', recentTransactions.length);
+    
+    recentTransactions.forEach(t => {
+      const row = document.createElement('tr');
+      const typeClass = t.type === 'in' ? 'stock-in' : 'stock-out';
+      const typeIcon = t.type === 'in' ? '📥 IN' : '📤 OUT';
+      
+      // Safely handle all possible field names
+      const productId = t.productId || t['Product ID'] || 'Unknown';
+      const mainCat = t.mainCat || t['Main Category'] || 'Unknown';
+      const subCat = t.subCat || t['Sub Category'] || '-';
+      const quantity = t.quantity || t.Quantity || 0;
+      const price = t.price || t.Price || 0;
+      const date = t.date || t.Date || new Date().toISOString();
+      
+      row.innerHTML = `
+        <td class="${typeClass}"><strong>${typeIcon}</strong></td>
+        <td>${productId}</td>
+        <td>${mainCat}</td>
+        <td>${subCat && subCat.trim() !== '' ? subCat : '-'}</td>
+        <td>${quantity}</td>
+        <td>${parseFloat(price).toFixed(2)}</td>
+        <td>${new Date(date).toLocaleString()}</td>
+      `;
+      transactionTableBody.appendChild(row);
+    });
+  }
+
+  // Event listeners
+  document.getElementById("btnStockIn").onclick = () => handleStock("in");
+  document.getElementById("btnStockOut").onclick = () => handleStock("out");
+
+  // Enter key support for forms
+  quantityInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      priceInput.focus();
+    }
+  });
+  
+  priceInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleStock('in'); // Default to stock in on Enter
+    }
+  });
+
+  // Auto-refresh every 30 seconds
+  setInterval(() => {
+    console.log('🔄 Auto-refreshing data...');
+    loadData();
+  }, 30000);
+
+  // Initial load
+  loadData();
+</script>
+</body>
+</html>
