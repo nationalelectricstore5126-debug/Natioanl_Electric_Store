@@ -5,20 +5,12 @@ from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 import os
 from datetime import datetime
-# Change the run section at the bottom to:
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
 
-import os
-import json
-import base64
-
-sa_json_b64 = os.getenv("GOOGLE_SERVICE_ACCOUNT")
-SERVICE_ACCOUNT_INFO = json.loads(base64.b64decode(sa_json_b64))
 
 # ---------------- LOAD ENV ----------------
 load_dotenv()
+# ---------------- GOOGLE SHEETS SETUP ----------------
+
 
 app = Flask(__name__)
 
